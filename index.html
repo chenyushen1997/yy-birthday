@@ -116,14 +116,7 @@
         }
         #start-btn:hover { transform: scale(1.05); box-shadow: 0 0 0 6px rgba(255, 215, 0, 0.4), 0 20px 70px rgba(255, 215, 0, 0.9); }
 
-        #upload-btn {
-            display: none; pointer-events: auto; background: rgba(255, 215, 0, 0.1); 
-            border: 1px solid rgba(255, 215, 0, 0.5); color: #ffd700; padding: 12px 30px; cursor: pointer; font-weight: bold;
-            font-size: 1rem; transition: 0.3s; border-radius: 50px; backdrop-filter: blur(5px);
-            text-transform: uppercase; letter-spacing: 2px;
-        }
-        #upload-btn:hover { background: rgba(255, 215, 0, 0.3); color: #fff; box-shadow: 0 0 15px rgba(255,215,0,0.4); }
-        #file-input { display: none; }
+
 
         #loading-text { color: #ffd700; font-size: 1.2rem; letter-spacing: 3px; animation: pulse 1s infinite alternate; }
         @keyframes pulse { from { opacity: 0.5; } to { opacity: 1; text-shadow: 0 0 20px #ffd700; } }
@@ -1114,21 +1107,7 @@
             }
         });
 
-        document.getElementById('file-input').addEventListener('change', function(e) {
-            setTimeout(() => { startCamera(); }, 600);
-            const files = e.target.files;
-            if (!files.length) return;
-            for(let i=0; i<files.length; i++) {
-                const reader = new FileReader();
-                reader.onload = function(evt) {
-                    const img = new Image();
-                    img.src = evt.target.result;
-                    img.onload = () => { addPhotoMesh(img); }
-                }
-                reader.readAsDataURL(files[i]);
-            }
-            alert(`已添加 ${files.length} 张照片`);
-        });
+
 
         function createPhotoMesh(tex, index) {
             let w = 4, h = 4;
