@@ -165,9 +165,9 @@
             <div id="loading-text">资源预加载中 (0%)...</div>
             <div class="start-controls">
                 <button id="start-btn" onclick="startExperience()">开启 小胖子的生日礼物</button>
-                <button id="upload-btn" onclick="document.getElementById('file-input').click()">上传照片</button>
             </div>
-            <input type="file" id="file-input" multiple accept="image/*">
+            <!-- 预加载图片 -->
+            <div id="preload-images" style="display:none;"></div>
         </div>
 
         <div id="video-container" onclick="toggleVideoSize()">
@@ -184,7 +184,7 @@
                 • <span class="highlight">向右挥动</span> : 旋转视角<br/>
                 • <span class="highlight">捏合手指</span> : 抓取查看照片
             </div>
-            <button id="cake-upload-btn" onclick="document.getElementById('file-input').click()">+ 添加照片</button>
+            <!-- 移除手动上传按钮 -->
         </div>
     </div>
 
@@ -399,7 +399,8 @@
                     await preCalculateTargets(); 
                     document.getElementById('loading-text').style.display = 'none';
                     document.getElementById('start-btn').style.display = 'inline-block';
-                    document.getElementById('upload-btn').style.display = 'inline-block';
+                    // 预加载本地图片
+                    preloadLocalImages();
                 }, undefined, function(err) {
                     console.error("字体加载失败", err);
                     document.getElementById('loading-text').innerText = "资源加载失败，请刷新重试";
@@ -691,6 +692,32 @@
             shape.closePath();
             return new THREE.ExtrudeGeometry(shape, { steps: 1, depth: 0.8, bevelEnabled: true, bevelThickness: 0.3, bevelSize: 0.3, bevelSegments: 3 });
         }
+
+        // 预定义本地图片列表
+        const LOCAL_IMAGES = [
+            'images/微信图片_2026-01-15_171331_041.jpg'
+            // 如果有更多图片，请按格式添加，例如：
+            // 'images/photo2.jpg',
+            // 'images/photo3.jpg'
+        ];
+
+        function preloadLocalImages() {
+            const preloadContainer = document.getElementById('preload-images');
+            LOCAL_IMAGES.forEach(src => {
+                const img = new Image();
+                img.src = src;
+                img.onload = () => {
+                   // 图片加载完成后自动创建纹理并添加到场景
+                   const tex = new THREE.TextureLoader().load(src);
+                   tex.colorSpace = THREE.SRGBColorSpace;
+                   createPhotoMesh(tex, photoMeshes.length);
+                };
+                preloadContainer.appendChild(img);
+            });
+        }
+
+        // 移除原有的文件选择监听器，改为直接使用
+        // document.getElementById('file-input').addEventListener('change', function(e) { ... });
 
         function createMaterialsAndMeshes() {
             // 降低自发光强度，配合 Bloom 调整（hcc的原创代码 请勿侵权或随意传播 定制联系qq840473750）
@@ -1048,7 +1075,7 @@
                         });
                         zoomTargetIndex = bestIdx;
                     }
-                } else { status.innerHTML = "状态: <span style='color:#aaa'>请先上传照片</span>"; }
+                } else { status.innerHTML = "状态: <span style='color:#aaa'>暂无照片</span>"; }
             } else if (isFist) {
                 currentState = STATE.TREE; 
                 zoomTargetIndex = -1; 
@@ -1103,10 +1130,9 @@
             alert(`已添加 ${files.length} 张照片`);
         });
 
-        function addPhotoMesh(img) {
-            const tex = new THREE.Texture(img);
-            tex.needsUpdate = true; tex.colorSpace = THREE.SRGBColorSpace;
+        function createPhotoMesh(tex, index) {
             let w = 4, h = 4;
+            const img = tex.image;
             if(img.width > img.height) h = 4 * (img.height/img.width); else w = 4 * (img.width/img.height);
             
             const mat = new THREE.MeshStandardMaterial({ 
@@ -1130,16 +1156,37 @@
             );
             frame.position.z = -0.06; mesh.add(frame);
             
+            // 使用更简单的随机分布逻辑，避免依赖可能不存在的函数
             const tierIndex = Math.floor(Math.random() * CONFIG.tiers.length);
             const tier = CONFIG.tiers[tierIndex];
             const h_pos = Math.random() * tier.height;
             const r = tier.radius * 1.1; const theta = Math.random() * Math.PI * 2;
             const treePos = new THREE.Vector3(r * Math.cos(theta), tier.yBottom + h_pos, r * Math.sin(theta));
-            mesh.userData = { treePos, scatterPos: randomSpherePoint(50), baseRot: new THREE.Euler(0, Math.random()*Math.PI, 0) };
+            
+            // 随机球形分布用于 scatter 状态
+            const stheta = Math.random() * Math.PI * 2;
+            const sphi = Math.acos(2 * Math.random() - 1);
+            const sradius = 100 + Math.random() * 80;
+            const scatterPos = new THREE.Vector3(
+                sradius * Math.sin(sphi) * Math.cos(stheta),
+                sradius * Math.sin(sphi) * Math.sin(stheta),
+                sradius * Math.cos(sphi)
+            );
+
+            mesh.userData = { 
+                treePos: treePos, 
+                scatterPos: scatterPos, 
+                baseRot: new THREE.Euler(0, Math.random()*Math.PI, 0) 
+            };
             mesh.position.copy(treePos);
+            mesh.lookAt(new THREE.Vector3(0,0,0)); // 初始朝向中心
+            
             photoMeshes.push(mesh);
             mainGroup.add(mesh);
         }
+
+        // function getTreePosition(idx) { ... } // 移除未使用的辅助函数
+
 
         initThree();
     </script>
