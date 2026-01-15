@@ -937,13 +937,35 @@
             if (detectionFrameId) { cancelAnimationFrame(detectionFrameId); detectionFrameId = null; }
             if (globalVideo.srcObject) { globalVideo.srcObject.getTracks().forEach(track => track.stop()); globalVideo.srcObject = null; }
 
+            // 检查浏览器兼容性
+            if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+                document.getElementById('status-text').innerText = "不支持摄像头(需HTTPS/localhost)";
+                return;
+            }
+
             const constraints = { video: { facingMode: "user", width: { ideal: 640 }, height: { ideal: 480 } } };
+            
             navigator.mediaDevices.getUserMedia(constraints).then((stream) => {
                 globalVideo.srcObject = stream;
                 globalVideo.play().then(() => { predictWebcam(); });
             }).catch(err => {
                 console.error("Camera failed: ", err);
-                document.getElementById('status-text').innerText = "摄像头启动失败";
+                
+                // 尝试降级策略：如果不强制要求分辨率和前置
+                const fallbackConstraints = { video: true };
+                navigator.mediaDevices.getUserMedia(fallbackConstraints).then((stream) => {
+                     globalVideo.srcObject = stream;
+                     globalVideo.play().then(() => { predictWebcam(); });
+                }).catch(err2 => {
+                    let msg = "摄像头启动失败";
+                    if (err2.name === 'NotAllowedError') msg = "请允许访问摄像头";
+                    else if (err2.name === 'NotFoundError') msg = "未找到摄像头";
+                    else if (err2.name === 'NotReadableError') msg = "摄像头被占用或硬件错误";
+                    else if (location.protocol !== 'https:' && location.hostname !== 'localhost' && location.hostname !== '127.0.0.1') msg = "请使用HTTPS访问";
+                    else msg = "摄像头错误: " + err2.name;
+                    
+                    document.getElementById('status-text').innerText = msg;
+                });
             });
         }
 
