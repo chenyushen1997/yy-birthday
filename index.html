@@ -178,12 +178,12 @@
         <div id="ui-layer">
             <h1>小胖子的生日祝福</h1>
             <div id="status-text">系统就绪，请伸手</div>
-            <div class="instructions">
+            <!-- <div class="instructions">
                 • <span class="highlight">握拳</span> : 聚合成蛋糕<br/>
                 • <span class="highlight">张开五指</span> : 散开照片墙<br/>
                 • <span class="highlight">向右挥动</span> : 旋转视角<br/>
                 • <span class="highlight">捏合手指</span> : 抓取查看照片
-            </div>
+            </div> -->
             <button id="cake-upload-btn" onclick="document.getElementById('file-input').click()">+ 添加照片</button>
         </div>
     </div>
@@ -418,7 +418,7 @@
             const texts = ["5", "4", "3", "2", "1", "0117"];
             
             const isMobile = window.innerWidth < 768;
-            const yearSize = isMobile ? 30 : 55; 
+            const yearSize = isMobile ? 20 : 55; 
             const sizes = [45, 45, 45, 45, 45, yearSize];
             
             for(let i=0; i<texts.length; i++) {
@@ -923,7 +923,7 @@
             const vision = await FilesetResolver.forVisionTasks("https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.0/wasm");
             globalHandLandmarker = await HandLandmarker.createFromOptions(vision, {
                 baseOptions: {
-                    modelAssetPath: `./models/hand_landmarker.task`,
+                    modelAssetPath: `https://storage.googleapis.com/mediapipe-models/hand_landmarker/hand_landmarker/float16/1/hand_landmarker.task`,
                     delegate: "GPU"
                 },
                 runningMode: "VIDEO", numHands: 1
